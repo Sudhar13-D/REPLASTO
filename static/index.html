@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Replasto — Rural Plastic Waste Chain-of-Custody</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Offline Vendored Chart.js (No external network calls) -->
+  <script src="/static/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Persistent Demo Data Banner (Visible Across Every Screen) -->
+  <header class="demo-banner" role="banner" id="demoBanner">
+    <span class="badge-pill">NOTICE</span>
+    <span>DEMO DATA: synthetic, not field data</span>
+    <span style="opacity: 0.8; font-weight: normal; margin-left: 8px;">• Offline-first chain-of-custody prototype</span>
+  </header>
+
+  <div class="app-container">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <div class="brand-icon" aria-hidden="true">R</div>
+        <div class="brand-text">
+          <h1>Replasto</h1>
+          <p>PWMU Chain-of-Custody</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav">
+        <a class="nav-item active" data-page="overview" id="nav-overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Overview</span>
+        </a>
+        <a class="nav-item" data-page="batches" id="nav-batches">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span>Batches</span>
+        </a>
+        <a class="nav-item" data-page="collection" id="nav-collection">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          <span>Collection & Routes</span>
+        </a>
+        <a class="nav-item" data-page="reconciliation" id="nav-reconciliation">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <span>Reconciliation</span>
+        </a>
+        <a class="nav-item" data-page="anomalies" id="nav-anomalies">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Anomalies (ML)</span>
+        </a>
+        <a class="nav-item" data-page="economics" id="nav-economics">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          <span>Economics & Sales</span>
+        </a>
+        <a class="nav-item" data-page="integrity" id="nav-integrity">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Chain Integrity</span>
+        </a>
+        <a class="nav-item" data-page="offline" id="nav-offline">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+          <span>Offline Demo</span>
+        </a>
+        <a class="nav-item" data-page="settings" id="nav-settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div>PWMU Node: <strong>Ramanagara Cluster</strong></div>
+        <div class="node-status-indicator">
+          <div class="pulse-dot"></div>
+          <span>Load Cell Active</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      
+      <!-- Top Application Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Toggle Navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="page-title-badge" id="topPageTitle">Overview</div>
+        </div>
+
+        <div class="top-bar-right">
+          <!-- Global Date Range Filter -->
+          <div class="filter-group">
+            <label for="globalDateRange">Period:</label>
+            <select class="select-input" id="globalDateRange">
+              <option value="ALL">All 60 Days (Full History)</option>
+              <option value="30">Last 30 Days</option>
+              <option value="14">Last 14 Days</option>
+              <option value="7">Last 7 Days</option>
+            </select>
+          </div>
+
+          <!-- Offline Simulation Toggle Switch -->
+          <div class="offline-toggle-container" title="Simulate field shed disconnection without network">
+            <span class="offline-label">Offline Simulation</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="offlineModeToggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="offline-queue-badge" id="offlineQueueBadge" style="display:none;">Queued: 0</span>
+          </div>
+
+          <!-- Quick Action: Record Bale -->
+          <button class="btn btn-primary btn-sm" id="quickAddBatchBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Record Bale</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Page View Container -->
+      <main class="content-area" id="appView">
+        <!-- Injected via ES Modules router -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Detail Drawer for Batches -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="detail-drawer" id="batchDrawer" aria-label="Batch Details Drawer">
+    <div class="drawer-header">
+      <h3 style="font-size: 16px; font-weight: 700;" id="drawerTitle">Bale Details</h3>
+      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close drawer">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <!-- Dynamic Batch Data -->
+    </div>
+  </aside>
+
+  <!-- Add Batch Modal -->
+  <div class="modal-backdrop" id="addBatchModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 15px; font-weight: 700;">Record Hardware Bale Weighment</h3>
+        <button class="drawer-close-btn" id="closeAddBatchModal">&times;</button>
+      </div>
+      <form id="addBatchForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="newBatchVillage">Village Shed Node</label>
+            <select class="form-control" id="newBatchVillage" required>
+              <!-- Populated via API -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newBatchStream">Plastic Stream</label>
+            <select class="form-control" id="newBatchStream" required>
+              <option value="MLP">MLP (Multi-Layer Plastic)</option>
+              <option value="HDPE">HDPE (High-Density Polyethylene)</option>
+              <option value="LDPE">LDPE (Low-Density Film)</option>
+              <option value="PET">PET (Bottles & Containers)</option>
+              <option value="Mixed">Mixed Plastics</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newBatchKg">Load Cell Mass (kg)</label>
+            <input type="number" step="0.1" min="1" max="250" class="form-control" id="newBatchKg" placeholder="e.g. 56.4" required>
+            <div class="form-helper">Calibrated digital scale reading from node load-cell platform.</div>
+          </div>
+          <div class="form-group">
+            <label for="newBatchOperator">Operator ID</label>
+            <input type="text" class="form-control" id="newBatchOperator" value="OP-101 (Ramesh)" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelAddBatch">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitAddBatch">Save Weighment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Version Modal -->
+  <div class="modal-backdrop" id="editVersionModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 15px; font-weight: 700;">Create Corrective Batch Version</h3>
+        <button class="drawer-close-btn" id="closeEditVersionModal">&times;</button>
+      </div>
+      <form id="editVersionForm">
+        <div class="modal-body">
+          <input type="hidden" id="editBatchId">
+          <div style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 12px;">
+            Edits create a new version row and append to the audit trail. Prior records are preserved in the tamper-evident chain.
+          </div>
+          <div class="form-group">
+            <label for="editStream">Plastic Stream</label>
+            <select class="form-control" id="editStream">
+              <option value="MLP">MLP (Multi-Layer Plastic)</option>
+              <option value="HDPE">HDPE (High-Density Polyethylene)</option>
+              <option value="LDPE">LDPE (Low-Density Film)</option>
+              <option value="PET">PET (Bottles & Containers)</option>
+              <option value="Mixed">Mixed Plastics</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editKg">Corrected Mass (kg)</label>
+            <input type="number" step="0.1" min="1" class="form-control" id="editKg" required>
+          </div>
+          <div class="form-group">
+            <label for="editReason">Audit Reason for Correction</label>
+            <input type="text" class="form-control" id="editReason" placeholder="e.g. Tare tare offset re-check after zero calibration" required minlength="4">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelEditVersion">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save New Version</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Root -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Application Bootstrap -->
+  <script type="module" src="/static/js/app.js"></script>
+
+</body>
+</html>

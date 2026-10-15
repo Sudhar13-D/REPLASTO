@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Replasto — Rural Plastic Waste Chain-of-Custody</title>
   <link rel="stylesheet" href="/static/css/style.css">
-  <!-- Offline Vendored Chart.js (No external network calls) -->
+  <!-- Offline Vendored Chart.js & jsQR (No external network calls) -->
   <script src="/static/vendor/chart.umd.min.js"></script>
+  <script src="/static/vendor/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -37,6 +38,19 @@
         <a class="nav-item" data-page="batches" id="nav-batches">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
           <span>Batches</span>
+        </a>
+        <a class="nav-item scanner-nav-highlight" data-action="scan" id="nav-scan-bale" title="Scan Bale QR Code or Barcode (Alt+S)">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <rect x="7" y="7" width="10" height="10" rx="1.5"></rect>
+          </svg>
+          <span style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <span>Bale Scanner</span>
+            <span class="badge-pill" style="font-size:9px; background:#4ADE80; color:#14281D; padding:1px 5px; font-weight:800;">LIVE</span>
+          </span>
         </a>
         <a class="nav-item" data-page="collection" id="nav-collection">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
@@ -110,6 +124,19 @@
             </label>
             <span class="offline-queue-badge" id="offlineQueueBadge" style="display:none;">Queued: 0</span>
           </div>
+
+          <!-- Quick Action: Scan Bale -->
+          <button class="btn btn-secondary btn-sm" id="scanBaleTopBtn" title="Scan Bale Tag QR / Barcode (Alt+S)" style="background:var(--color-surface); border:1px solid var(--color-primary); color:var(--color-primary); font-weight:700;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+              <line x1="7" y1="12" x2="17" y2="12"></line>
+            </svg>
+            <span>Scan Bale</span>
+            <kbd class="kbd-hint" style="font-size:10px; opacity:0.8; font-family:var(--font-mono); background:var(--color-surface-subtle); padding:1px 4px; border-radius:3px; margin-left:2px; border:1px solid var(--color-border);">Alt+S</kbd>
+          </button>
 
           <!-- Quick Action: Record Bale -->
           <button class="btn btn-primary btn-sm" id="quickAddBatchBtn">
@@ -219,6 +246,128 @@
           <button type="submit" class="btn btn-primary">Save New Version</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Bale QR & Barcode Scanner Modal -->
+  <div class="modal-backdrop" id="scannerModal">
+    <div class="modal-dialog scanner-modal-dialog">
+      <div class="modal-header" style="background:var(--color-dark-pine); color:#FFFFFF;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:rgba(74, 222, 128, 0.15); color:#4ADE80; border-radius:6px; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+              <rect x="7" y="7" width="10" height="10" rx="1.5"></rect>
+            </svg>
+          </div>
+          <div>
+            <h3 style="font-size: 15px; font-weight: 700; margin: 0; color:#FFFFFF;">Bale Hardware Tag Scanner</h3>
+            <p style="font-size: 11px; margin: 0; opacity: 0.8; color:#D1DCD3;">Optical QR seal & Barcode scanner for rural PWMU bales</p>
+          </div>
+        </div>
+        <button class="drawer-close-btn" id="closeScannerModal" style="color:#D1DCD3;" aria-label="Close scanner">&times;</button>
+      </div>
+
+      <!-- Scanner Mode Tabs -->
+      <div class="scanner-tabs-bar">
+        <button type="button" class="scanner-tab active" data-tab="camera">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span>Live Camera</span>
+        </button>
+        <button type="button" class="scanner-tab" data-tab="upload">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <span>Upload Image</span>
+        </button>
+        <button type="button" class="scanner-tab" data-tab="manual">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"></path></svg>
+          <span>Enter / USB Gun</span>
+        </button>
+        <button type="button" class="scanner-tab" data-tab="samples">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>Demo Tags</span>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:16px;">
+        <!-- Live Camera Viewfinder Panel -->
+        <div class="scanner-panel active" data-panel="camera">
+          <div class="scanner-viewfinder-container">
+            <video id="scannerVideo" autoplay playsinline muted class="scanner-video"></video>
+            
+            <!-- Reticle / Target Guides -->
+            <div class="scanner-overlay" id="scannerOverlay">
+              <div class="scanner-reticle">
+                <div class="reticle-corner top-left"></div>
+                <div class="reticle-corner top-right"></div>
+                <div class="reticle-corner bottom-left"></div>
+                <div class="reticle-corner bottom-right"></div>
+                <div class="scanner-laser"></div>
+              </div>
+              <div class="scanner-hint-text">
+                Align bale QR tag or barcode within reticle
+              </div>
+            </div>
+
+            <!-- Camera Switch Floating Button -->
+            <button type="button" class="btn-camera-flip" id="switchCameraBtn" title="Switch Camera (Front/Back)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+
+            <!-- Error fallback state -->
+            <div id="cameraErrorState" class="camera-error-container" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Upload Image Panel -->
+        <div class="scanner-panel" data-panel="upload">
+          <input type="file" id="scannerFileInput" accept="image/*" style="display:none;">
+          <div class="scanner-dropzone" id="scannerDropZone">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.8" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <div style="font-weight:700; color:var(--color-text-main); font-size:14px; margin-bottom:4px;">
+              Drop bale tag photo here or click to browse
+            </div>
+            <div style="font-size:12px; color:var(--color-text-muted);">
+              Supports smartphone camera shots, labels, and QR tags (PNG, JPG, WebP)
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Input / USB Barcode Gun Panel -->
+        <div class="scanner-panel" data-panel="manual">
+          <form id="manualScanForm">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label for="manualBaleInput" style="font-weight:700;">Bale ID or Barcode Serial</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" class="text-input" id="manualBaleInput" placeholder="e.g. BAL-26-1001 or scan with USB barcode gun" style="flex:1;" autofocus>
+                <button type="submit" class="btn btn-primary" id="manualLookupBtn">Lookup &rarr;</button>
+              </div>
+              <div class="form-helper" style="margin-top:6px;">
+                Compatible with hardware USB & Bluetooth laser barcode scanner guns.
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Demo Quick Sample Tags Panel -->
+        <div class="scanner-panel" data-panel="samples">
+          <div id="scannerSamplesContainer">
+            <!-- Populated via API -->
+          </div>
+        </div>
+
+        <!-- Active Scan Feedback Card -->
+        <div id="scannerFeedback" style="display:none; margin-top:12px;"></div>
+      </div>
+
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--color-text-dim);">
+          Cryptographic chain verified &bull; Offline decoder ready
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" id="cancelScanner">Close</button>
+      </div>
     </div>
   </div>
 

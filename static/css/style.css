@@ -884,6 +884,219 @@ table.data-table code {
   font-weight: 700;
 }
 
+/* Scanner Modal & Hardware Viewfinder */
+.scanner-modal-dialog {
+  width: 580px;
+  max-width: 95vw;
+}
+
+.scanner-tabs-bar {
+  display: flex;
+  background-color: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 10px 0;
+  gap: 4px;
+}
+
+.scanner-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.scanner-tab:hover {
+  color: var(--color-text-main);
+  background-color: rgba(20, 40, 29, 0.04);
+}
+
+.scanner-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background-color: var(--color-surface);
+}
+
+.scanner-panel {
+  display: none;
+}
+
+.scanner-panel.active {
+  display: block;
+}
+
+/* Viewfinder Frame */
+.scanner-viewfinder-container {
+  position: relative;
+  width: 100%;
+  height: 310px;
+  background-color: #0B1910;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Target Reticle */
+.scanner-reticle {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  box-shadow: 0 0 0 9999px rgba(10, 22, 15, 0.55);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.reticle-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: #4ADE80;
+  border-style: solid;
+  pointer-events: none;
+}
+
+.reticle-corner.top-left {
+  top: 0; left: 0;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 10px;
+}
+.reticle-corner.top-right {
+  top: 0; right: 0;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 10px;
+}
+.reticle-corner.bottom-left {
+  bottom: 0; left: 0;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 10px;
+}
+.reticle-corner.bottom-right {
+  bottom: 0; right: 0;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 10px;
+}
+
+/* Glowing Laser Line Sweep Animation */
+.scanner-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #4ADE80, #86EFAC, #4ADE80, transparent);
+  box-shadow: 0 0 12px #4ADE80, 0 0 24px #22C55E;
+  animation: laserSweep 2s ease-in-out infinite;
+}
+
+@keyframes laserSweep {
+  0% {
+    top: 5%;
+    opacity: 0.3;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.3;
+  }
+}
+
+.scanner-hint-text {
+  margin-top: 14px;
+  background: rgba(14, 28, 20, 0.85);
+  backdrop-filter: blur(4px);
+  color: #FEF3C7;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.02em;
+}
+
+/* Floating Flip Button */
+.btn-camera-flip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: rgba(20, 40, 29, 0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-camera-flip:hover {
+  background: var(--color-primary);
+  transform: rotate(180deg);
+}
+
+.camera-error-container {
+  padding: 24px;
+  text-align: center;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 16px;
+}
+
+/* Drag & Drop Area */
+.scanner-dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 36px 20px;
+  text-align: center;
+  background-color: var(--color-surface-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scanner-dropzone:hover,
+.scanner-dropzone.dragover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.scanner-nav-highlight:hover {
+  background-color: var(--color-sidebar-hover);
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
   .sidebar {

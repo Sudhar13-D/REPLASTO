@@ -11,6 +11,7 @@ import { renderEconomics } from "./pages/economics.js";
 import { renderIntegrity } from "./pages/integrity.js";
 import { renderOffline } from "./pages/offline.js";
 import { renderSettings } from "./pages/settings.js";
+import { initScanner, openScanner } from "./scanner.js";
 
 const routes = {
   "overview": { title: "Executive Overview", render: renderOverview },
@@ -24,10 +25,11 @@ const routes = {
   "settings": { title: "System Assumptions & Settings", render: renderSettings }
 };
 
-const appState = {
+export const appState = {
   currentPage: "overview",
   dateRange: "ALL",
-  activeBatchId: null
+  activeBatchId: null,
+  scannedBale: null
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -37,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initBatchDrawer();
   initModals();
   initGlobalReference();
+  initScanner();
 
   // Navigate to initial page
   navigateTo("overview");
@@ -49,6 +52,15 @@ function initNavigation() {
   navItems.forEach(item => {
     item.addEventListener("click", () => {
       const page = item.getAttribute("data-page");
+      if (!page) {
+        if (item.getAttribute("data-action") === "scan") {
+          openScanner();
+          if (window.innerWidth <= 1024) {
+            sidebar.classList.remove("open");
+          }
+        }
+        return;
+      }
       navigateTo(page);
 
       // On mobile, close sidebar after clicking
@@ -160,9 +172,10 @@ function initBatchDrawer() {
 
   window.addEventListener("open-batch-drawer", async (e) => {
     const batchId = e.detail.batchId;
-    if (!batchId) return;
+    const baleId = e.detail.baleId;
+    if (!batchId && !baleId) return;
 
-    appState.activeBatchId = batchId;
+    appState.activeBatchId = batchId || baleId;
     const body = document.getElementById("drawerBody");
     const title = document.getElementById("drawerTitle");
 
@@ -173,7 +186,12 @@ function initBatchDrawer() {
     body.innerHTML = `<div style="text-align:center; padding:40px; color:var(--color-text-dim);">Fetching tamper-evident cryptographic record...</div>`;
 
     try {
-      const data = await API.getBatchDetail(batchId);
+      let data;
+      if (typeof batchId === "number" || (typeof batchId === "string" && /^\d+$/.test(batchId))) {
+        data = await API.getBatchDetail(batchId);
+      } else {
+        data = await API.lookupBatch(batchId || baleId);
+      }
       title.textContent = `Bale: ${data.bale_id}`;
 
       const photoUrl = data.photo_path || "/static/assets/bales/default.svg";

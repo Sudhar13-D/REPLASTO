@@ -8,7 +8,11 @@ export async function renderBatches(container, state) {
         <h2 style="font-size:20px; font-weight:800; color:var(--color-text-main);">Bale Batches Register</h2>
         <p style="font-size:12px; color:var(--color-text-muted);">Tamper-evident chain of custody records with cryptographic SHA-256 integrity</p>
       </div>
-      <div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" id="openScannerFromBatchesBtn" style="border:1px solid var(--color-primary-border); color:var(--color-primary); background:var(--color-surface); font-weight:700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10" rx="1.5"></rect></svg>
+          <span>Scan Bale</span>
+        </button>
         <button class="btn btn-primary" id="openAddBatchFromPageBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           <span>Record New Bale</span>
@@ -220,6 +224,10 @@ export async function renderBatches(container, state) {
       }
       loadTable();
     });
+  });
+
+  document.getElementById("openScannerFromBatchesBtn")?.addEventListener("click", () => {
+    document.getElementById("scanBaleTopBtn")?.click();
   });
 
   document.getElementById("openAddBatchFromPageBtn")?.addEventListener("click", () => {

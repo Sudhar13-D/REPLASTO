@@ -1,7 +1,64 @@
 import { API } from "../api.js";
-import { formatKg, formatInr, formatPct, renderStreamBadge } from "../components.js";
+import { formatKg, formatInr, formatPct, renderStreamBadge, renderStatusChip } from "../components.js";
 
 let weeklyChartInstance = null;
+
+function renderScannedBaleBanner(bale) {
+  if (!bale) return "";
+  const varPct = bale.variance_pct !== null && bale.variance_pct !== undefined ? `${bale.variance_pct}%` : "Pending delivery";
+  const buyerKg = bale.kg_buyer ? `${bale.kg_buyer} kg` : "—";
+
+  return `
+    <div id="scannedBaleLiveCard" class="card" style="margin-bottom:20px; background:linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%); border:2px solid var(--color-primary); box-shadow:var(--shadow-md); position:relative; overflow:hidden; animation:slideIn 0.3s ease;">
+      <div style="position:absolute; top:0; left:0; width:6px; bottom:0; background:var(--color-primary);"></div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="pulse-dot"></div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:16px; font-weight:800; color:var(--color-dark-pine); font-family:var(--font-mono);">${bale.bale_id}</span>
+              ${renderStreamBadge(bale.stream)}
+              ${renderStatusChip(bale.status)}
+              ${bale.version > 1 ? `<span style="font-size:10px; background:#E2E8F0; padding:1px 5px; border-radius:3px; font-weight:700;">v${bale.version}</span>` : ""}
+            </div>
+            <div style="font-size:12px; color:var(--color-text-muted); margin-top:2px;">
+              ${bale.shed_name || bale.village_id} &bull; Operator: <strong>${bale.operator_id}</strong> &bull; Scanned &amp; Loaded on Dashboard
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-primary btn-sm" id="inspectScannedBaleBtn" style="font-size:12px; padding:5px 12px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Full Tamper-Evident Trail &amp; QR</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="dismissScannedBaleBtn" title="Dismiss Card" style="font-size:12px; padding:5px 9px;">✕</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; padding-top:10px; border-top:1px solid var(--color-border-light);">
+        <div>
+          <div style="font-size:11px; color:var(--color-text-dim); text-transform:uppercase; font-weight:700;">Platform Scale Mass</div>
+          <div style="font-size:18px; font-weight:800; color:var(--color-primary);">${formatKg(bale.kg_node)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--color-text-dim); text-transform:uppercase; font-weight:700;">Buyer Weighbridge</div>
+          <div style="font-size:16px; font-weight:700; color:var(--color-text-main);">${buyerKg}</div>
+          <div style="font-size:10px; color:var(--color-text-muted);">${bale.buyer_name || "Awaiting dispatch"}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--color-text-dim); text-transform:uppercase; font-weight:700;">Discrepancy Variance</div>
+          <div style="font-size:15px; font-weight:700; color:${bale.status === 'Flagged' ? 'var(--color-danger)' : 'var(--color-success)'};">${varPct}</div>
+          <div style="font-size:10px; color:var(--color-text-muted);">${bale.slip_ref ? `Slip: ${bale.slip_ref}` : 'Tolerance: 3%'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--color-text-dim); text-transform:uppercase; font-weight:700;">SHA-256 Seal Link</div>
+          <code style="font-size:11px; color:var(--color-text-main); display:block;" title="${bale.hash}">${bale.hash ? bale.hash.substring(0, 14) + '...' : '—'}</code>
+          <div style="font-size:10px; color:var(--color-success); font-weight:600;">✓ Cryptographically Sealed</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 export async function renderOverview(container, state) {
   container.innerHTML = `
@@ -10,10 +67,21 @@ export async function renderOverview(container, state) {
         <h2 style="font-size:20px; font-weight:800; color:var(--color-text-main);">Cluster Executive Overview</h2>
         <p style="font-size:12px; color:var(--color-text-muted);">Real-time weighbridge reconciliation, shed capacity telemetry, and material traceability</p>
       </div>
-      <div style="font-size:12px; color:var(--color-text-dim); display:flex; align-items:center; gap:6px;">
-        <span class="chip chip-ok" style="font-size:10px;">Hardware Nodes Online</span>
-        <span>• 6 Sheds Monitored</span>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" id="overviewScanBaleBtn" style="border:1px solid var(--color-primary-border); color:var(--color-primary); background:var(--color-surface); font-weight:700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10" rx="1.5"></rect></svg>
+          <span>Scan Bale</span>
+        </button>
+        <div style="font-size:12px; color:var(--color-text-dim); display:flex; align-items:center; gap:6px;">
+          <span class="chip chip-ok" style="font-size:10px;">Hardware Nodes Online</span>
+          <span>• 6 Sheds Monitored</span>
+        </div>
       </div>
+    </div>
+
+    <!-- Scanned Bale Active Banner on Dashboard -->
+    <div id="overviewScannedBaleSlot">
+      ${renderScannedBaleBanner(state.scannedBale)}
     </div>
 
     <!-- KPI Metrics -->
@@ -84,6 +152,31 @@ export async function renderOverview(container, state) {
 
     </div>
   `;
+
+  document.getElementById("overviewScanBaleBtn")?.addEventListener("click", () => {
+    document.getElementById("scanBaleTopBtn")?.click();
+  });
+
+  document.getElementById("inspectScannedBaleBtn")?.addEventListener("click", () => {
+    if (state.scannedBale) {
+      window.dispatchEvent(new CustomEvent("open-batch-drawer", {
+        detail: { batchId: state.scannedBale.id, baleId: state.scannedBale.bale_id }
+      }));
+    }
+  });
+
+  document.getElementById("dismissScannedBaleBtn")?.addEventListener("click", () => {
+    state.scannedBale = null;
+    const slot = document.getElementById("overviewScannedBaleSlot");
+    if (slot) slot.innerHTML = "";
+    // Clean URL query param
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("bale");
+      url.searchParams.delete("bale_id");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    } catch (e) {}
+  });
 
   // Fetch data
   try {

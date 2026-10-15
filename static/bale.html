@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Bale Verification & Passport — Replasto</title>
+  <meta name="description" content="Official tamper-evident chain-of-custody verification and digital passport for rural plastic waste bales.">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    /* Public Mobile-Optimized Bale Passport Styles */
+    :root {
+      --passport-bg: #F4F6F4;
+      --card-bg: #FFFFFF;
+      --accent-green: #166534;
+      --accent-emerald: #15803D;
+      --dark-pine: #112218;
+      --border-color: #DDE5DF;
+    }
+
+    body.bale-passport-page {
+      background-color: var(--passport-bg);
+      color: #1A2E22;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .passport-header-bar {
+      background-color: var(--dark-pine);
+      color: #FFFFFF;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .passport-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .passport-brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #22C55E 0%, #166534 100%);
+      color: #FFFFFF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .passport-brand-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .passport-brand-text p {
+      font-size: 11px;
+      margin: 0;
+      opacity: 0.75;
+      color: #D1DCD3;
+    }
+
+    .passport-container {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+      flex: 1;
+    }
+
+    .passport-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(20, 40, 29, 0.04);
+    }
+
+    .seal-banner {
+      background: linear-gradient(135deg, #15803D 0%, #166534 100%);
+      color: #FFFFFF;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
+    }
+
+    .seal-banner.flagged {
+      background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);
+    }
+
+    .seal-banner.unverified {
+      background: linear-gradient(135deg, #B45309 0%, #92400E 100%);
+      box-shadow: 0 4px 12px rgba(180, 83, 9, 0.2);
+    }
+
+    .seal-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .seal-subtext {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 3px;
+    }
+
+    .bale-hero {
+      text-align: center;
+      padding: 10px 0 16px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 18px;
+    }
+
+    .bale-id-badge {
+      font-family: var(--font-mono, monospace);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--dark-pine);
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .weight-hero {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--accent-green);
+      line-height: 1.1;
+      margin: 8px 0;
+    }
+
+    .weight-sub {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .prop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .prop-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
+    .prop-item {
+      background: #F9FAF9;
+      border: 1px solid #E5EBE6;
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .prop-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6B7280;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .prop-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #14281D;
+      word-break: break-word;
+    }
+
+    .bale-photo-wrap {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      height: 200px;
+      background: #112218;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .bale-photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .photo-caption {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      color: #4ADE80;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+      margin: 12px 0 4px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 8px;
+      width: 2px;
+      background: #D1DCD3;
+    }
+
+    .timeline-step {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .timeline-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    .timeline-dot.done {
+      background: #22C55E;
+    }
+
+    .timeline-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #14281D;
+    }
+
+    .timeline-desc {
+      font-size: 12px;
+      color: #4B5563;
+      margin-top: 2px;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .hash-box {
+      background: #F0F4F1;
+      border: 1px solid #D1DCD3;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #14281D;
+      word-break: break-all;
+      margin: 6px 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .btn-action {
+      flex: 1;
+      min-width: 140px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary-action {
+      background: var(--accent-green);
+      color: #FFFFFF;
+    }
+
+    .btn-primary-action:hover {
+      background: #14532D;
+    }
+
+    .btn-outline-action {
+      background: #FFFFFF;
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+    }
+
+    .btn-outline-action:hover {
+      background: #F0FDF4;
+    }
+
+    .copy-chip {
+      background: #E2E8F0;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Print styles */
+    @media print {
+      .passport-header-bar, .btn-action-bar, .demo-banner {
+        display: none !important;
+      }
+      .passport-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      .passport-card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="bale-passport-page">
+
+  <!-- Persistent Demo Data Banner -->
+  <header class="demo-banner" role="banner">
+    <span class="badge-pill">NOTICE</span>
+    <span>DEMO DATA: synthetic field weighment</span>
+    <span style="opacity: 0.8; font-weight: normal; margin-left: 8px;">• Replasto Chain-of-Custody</span>
+  </header>
+
+  <!-- Top Navigation Header -->
+  <header class="passport-header-bar">
+    <a href="/" class="passport-brand" title="Replasto Home">
+      <div class="passport-brand-icon">R</div>
+      <div class="passport-brand-text">
+        <h1>Replasto</h1>
+        <p>PWMU Chain-of-Custody</p>
+      </div>
+    </a>
+    <div>
+      <span class="badge-pill" style="background:#22C55E; color:#112218; font-weight:800; font-size:10px; padding:3px 8px;">
+        PASSPORT VERIFIED
+      </span>
+    </div>
+  </header>
+
+  <main class="passport-container" id="passportRoot">
+    <!-- Loading skeleton -->
+    <div style="text-align:center; padding:60px 20px; color:#6B7280;">
+      <div class="pulse-dot" style="margin:0 auto 16px; width:14px; height:14px;"></div>
+      <div style="font-size:15px; font-weight:700; color:#14281D;">Verifying Cryptographic Bale Record...</div>
+      <div style="font-size:12px; margin-top:4px;">Connecting to tamper-evident hardware ledger</div>
+    </div>
+  </main>
+
+  <footer style="text-align:center; padding:24px 16px; font-size:11px; color:#6B7280; border-top:1px solid #E5EBE6; margin-top:auto;">
+    <div>Replasto Rural Plastic Waste Management &bull; Tamper-Evident SHA-256 Chain</div>
+    <div style="margin-top:4px; opacity:0.8;">Zero-trust weighbridge reconciliation and material authenticity passport.</div>
+  </footer>
+
+  <script>
+    // Stream Descriptions and Resin Identification
+    const STREAM_INFO = {
+      "PET": { name: "PET #1 (Polyethylene Terephthalate)", desc: "Clear beverage bottles, thermoformed containers. High circularity value.", color: "#065F46", bg: "#D1FAE5" },
+      "HDPE": { name: "HDPE #2 (High-Density Polyethylene)", desc: "Rigid detergent bottles, crates, pipes, chemical drums.", color: "#1E40AF", bg: "#DBEAFE" },
+      "LDPE": { name: "LDPE #4 (Low-Density Polyethylene)", desc: "Flexible agricultural films, shopping liners, aggregate films.", color: "#5B21B6", bg: "#EDE9FE" },
+      "MLP": { name: "MLP #7 (Multi-Layer Plastic Laminate)", desc: "Metallized snack pouches, multi-polymer laminates. Co-processing target.", color: "#92400E", bg: "#FEF3C7" },
+      "Mixed": { name: "Mixed Plastics (Sorted Commingled)", desc: "Sorted post-consumer commingled polymers for mechanical recycling.", color: "#374151", bg: "#F3F4F6" }
+    };
+
+    function formatDate(ts) {
+      if (!ts) return "—";
+      try {
+        const d = new Date(ts.replace(" ", "T"));
+        return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      } catch (e) {
+        return ts;
+      }
+    }
+
+    async function loadPassport() {
+      const root = document.getElementById("passportRoot");
+      
+      // Determine bale ID from URL pathname (e.g. /bale/BAL-26-1001) or query param ?bale=BAL-26-1001
+      const pathParts = window.location.pathname.split("/").filter(Boolean);
+      let baleId = "";
+      if (pathParts.length >= 2 && (pathParts[0] === "bale" || pathParts[0] === "verify" || pathParts[0] === "passport")) {
+        baleId = decodeURIComponent(pathParts[1]);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        baleId = params.get("bale") || params.get("bale_id") || "BAL-26-1001";
+      }
+
+      try {
+        const res = await fetch(`/api/batches/lookup?query=${encodeURIComponent(baleId)}`);
+        if (!res.ok) {
+          throw new Error(`Bale record "${baleId}" was not found in the cryptographic registry.`);
+        }
+        const bale = await res.json();
+        renderPassport(root, bale);
+      } catch (err) {
+        root.innerHTML = `
+          <div class="passport-card" style="text-align:center; padding:40px 20px; border-left:4px solid #B91C1C;">
+            <div style="font-size:32px; margin-bottom:12px;">⚠️</div>
+            <h2 style="font-size:18px; font-weight:800; color:#B91C1C; margin:0 0 8px;">Bale Not Found</h2>
+            <p style="font-size:13px; color:#4B5563; margin-bottom:18px;">
+              ${err.message}
+            </p>
+            <div style="font-size:12px; color:#6B7280; margin-bottom:20px;">
+              Please re-scan the QR tag on the physical bale or check the Bale ID format (e.g. BAL-26-1001).
+            </div>
+            <a href="/" class="btn-action btn-primary-action" style="display:inline-flex;">
+              Go to Replasto Operations Dashboard
+            </a>
+          </div>
+        `;
+      }
+    }
+
+    function renderPassport(container, bale) {
+      const streamMeta = STREAM_INFO[bale.stream] || { name: bale.stream, desc: "Recyclable plastic stream", color: "#14281D", bg: "#E5EBE6" };
+      const isVerified = bale.status === "Verified";
+      const isFlagged = bale.status === "Flagged";
+      const photoUrl = bale.photo_path || "/static/assets/bales/default.svg";
+      const qrUrl = `/api/batches/${bale.id}/qr`;
+
+      let bannerClass = "";
+      let bannerTitle = "✓ Verified Chain-of-Custody Record";
+      let bannerSub = "Scale mass and destination weighbridge verified within 3% tolerance.";
+
+      if (isFlagged) {
+        bannerClass = "flagged";
+        bannerTitle = "⚠️ Discrepancy Flagged (> 3% Tolerance)";
+        bannerSub = `Discrepancy of ${bale.variance_pct}% between rural shed scale and buyer weighbridge.`;
+      } else if (!bale.delivered_at) {
+        bannerClass = "unverified";
+        bannerTitle = "⏳ Recorded at Shed Node (Genesis Weighment)";
+        bannerSub = "Awaiting vehicle dispatch and buyer weighbridge reconciliation.";
+      }
+
+      container.innerHTML = `
+        <!-- Status Seal Banner -->
+        <div class="seal-banner ${bannerClass}">
+          <div>
+            <div class="seal-title">${bannerTitle}</div>
+            <div class="seal-subtext">${bannerSub}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px; opacity:0.8; text-transform:uppercase;">Version</div>
+            <div style="font-size:16px; font-weight:800;">v${bale.version || 1}</div>
+          </div>
+        </div>
+
+        <!-- Primary Bale Header Card -->
+        <div class="passport-card">
+          <div class="bale-hero">
+            <div class="bale-id-badge">${bale.bale_id}</div>
+            <div style="display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; color:${streamMeta.color}; background:${streamMeta.bg}; margin-bottom:12px;">
+              ${streamMeta.name}
+            </div>
+            <div class="weight-hero">${parseFloat(bale.kg_node).toFixed(1)} <span style="font-size:22px; font-weight:600;">kg</span></div>
+            <div class="weight-sub">Calibrated Load-Cell Net Weighment</div>
+          </div>
+
+          <!-- Plastic & Telemetry Properties -->
+          <div class="prop-grid">
+            <div class="prop-item">
+              <div class="prop-label">Village Shed Node</div>
+              <div class="prop-val">${bale.shed_name || bale.village_id} (${bale.village_id})</div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Weighed By (Operator)</div>
+              <div class="prop-val">${bale.operator_id}</div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Timestamp Recorded</div>
+              <div class="prop-val">${formatDate(bale.created_at)}</div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Resin Stream Classification</div>
+              <div class="prop-val">${bale.stream} &bull; ${streamMeta.desc.split(".")[0]}</div>
+            </div>
+          </div>
+
+          <!-- Hardware Snapshot Image -->
+          <div style="font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; margin-bottom:6px;">
+            Hardware Camera Platform Capture
+          </div>
+          <div class="bale-photo-wrap">
+            <img src="${photoUrl}" alt="Physical Bale Weighment Snapshot" onerror="this.src='/static/assets/bales/default.svg'">
+            <div class="photo-caption">CAMERA PLATFORM TELEMETRY &bull; ${bale.bale_id}</div>
+          </div>
+        </div>
+
+        <!-- Weighbridge Destination Reconciliation Card -->
+        <div class="passport-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:14px; font-weight:800; color:#14281D; text-transform:uppercase; letter-spacing:0.02em;">
+              Buyer Weighbridge Reconciliation
+            </div>
+            <span class="badge-pill" style="font-size:11px; background:${isVerified ? '#DCFCE7' : isFlagged ? '#FEE2E2' : '#FEF3C7'}; color:${isVerified ? '#166534' : isFlagged ? '#991B1B' : '#92400E'};">
+              ${bale.status}
+            </span>
+          </div>
+
+          <div class="prop-grid">
+            <div class="prop-item">
+              <div class="prop-label">Buyer Destination</div>
+              <div class="prop-val">${bale.buyer_name || "Pending Dispatch from Shed"}</div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Weighbridge Slip Ref</div>
+              <div class="prop-val"><code style="font-size:12px;">${bale.slip_ref || "Awaiting weighbridge slip"}</code></div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Buyer Weighbridge Mass</div>
+              <div class="prop-val" style="color:var(--dark-pine); font-size:16px;">
+                ${bale.kg_buyer ? parseFloat(bale.kg_buyer).toFixed(1) + ' kg' : '—'}
+              </div>
+            </div>
+            <div class="prop-item">
+              <div class="prop-label">Discrepancy Variance</div>
+              <div class="prop-val" style="color:${isFlagged ? '#B91C1C' : isVerified ? '#15803D' : '#6B7280'};">
+                ${bale.variance_pct !== null && bale.variance_pct !== undefined ? `${bale.variance_pct}% (Δ ${bale.variance_kg} kg)` : 'Pending delivery'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tamper-Evident SHA-256 Proof -->
+        <div class="passport-card">
+          <div style="font-size:14px; font-weight:800; color:#14281D; text-transform:uppercase; margin-bottom:10px;">
+            Cryptographic Integrity Proof
+          </div>
+          <div style="display:flex; gap:16px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="width:100px; height:100px; border:1px solid #D1DCD3; border-radius:8px; overflow:hidden; flex-shrink:0;">
+              <img src="${qrUrl}" alt="Bale QR Code Tag" style="width:100%; height:100%;">
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <div style="font-size:11px; color:#6B7280; font-weight:700;">CURRENT SHA-256 BLOCK SEAL ($H_n$):</div>
+              <div class="hash-box">
+                <span id="currentHashText">${bale.hash}</span>
+                <button class="copy-chip" onclick="copyText('${bale.hash}')">Copy</button>
+              </div>
+              <div style="font-size:11px; color:#6B7280; font-weight:700;">PREVIOUS BLOCK HASH ($H_{n-1}$):</div>
+              <div style="font-family:monospace; font-size:11px; color:#4B5563; word-break:break-all; margin-top:2px;">
+                ${bale.prev_hash}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custody Audit Timeline -->
+        <div class="passport-card">
+          <div style="font-size:14px; font-weight:800; color:#14281D; text-transform:uppercase; margin-bottom:12px;">
+            Chain of Custody Audit Trail
+          </div>
+          <div class="timeline">
+            <div class="timeline-step">
+              <div class="timeline-dot done"></div>
+              <div class="timeline-title">Node Weighment & Sealed</div>
+              <div class="timeline-desc">Scale mass ${bale.kg_node} kg of ${bale.stream} recorded at ${bale.shed_name || bale.village_id} by ${bale.operator_id}. Extended SHA-256 hash chain.</div>
+              <div class="timeline-time">${formatDate(bale.created_at)}</div>
+            </div>
+
+            ${(bale.version_history || []).filter(v => v.version > 1).map(v => `
+              <div class="timeline-step">
+                <div class="timeline-dot" style="background:#D97706;"></div>
+                <div class="timeline-title">Audit Version ${v.version} Created</div>
+                <div class="timeline-desc">Corrective revision: ${v.stream} &bull; ${v.kg_node} kg. Reason: <em>${v.edit_reason || "Tare tare offset calibration"}</em></div>
+                <div class="timeline-time">${formatDate(v.created_at)}</div>
+              </div>
+            `).join("")}
+
+            <div class="timeline-step">
+              <div class="timeline-dot ${bale.delivered_at ? 'done' : ''}" style="${!bale.delivered_at ? 'background:#CBD5E1; box-shadow:none;' : ''}"></div>
+              <div class="timeline-title">${bale.delivered_at ? 'Destination Weighbridge Reconciliation' : 'Transit to Recycler Destination'}</div>
+              <div class="timeline-desc">
+                ${bale.delivered_at ? `Delivered to ${bale.buyer_name}. Scale: ${bale.kg_buyer} kg (Variance: ${bale.variance_pct}%). Slip #${bale.slip_ref}.` : 'Pending truck dispatch and delivery weighbridge weighment.'}
+              </div>
+              <div class="timeline-time">${bale.delivered_at ? formatDate(bale.delivered_at) : 'In Progress'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-action-bar">
+          <button class="btn-action btn-primary-action" onclick="sharePassport('${bale.bale_id}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            <span>Share Passport</span>
+          </button>
+          <button class="btn-action btn-outline-action" onclick="window.print()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Print Certificate</span>
+          </button>
+          <a href="/?bale=${encodeURIComponent(bale.bale_id)}" class="btn-action btn-outline-action" style="color:#112218; border-color:#9CA3AF;">
+            <span>Open Dashboard &rarr;</span>
+          </a>
+        </div>
+      `;
+    }
+
+    function copyText(txt) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt);
+        alert("Copied SHA-256 hash to clipboard!");
+      } else {
+        const input = document.createElement("input");
+        input.value = txt;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        alert("Copied to clipboard!");
+      }
+    }
+
+    function sharePassport(baleId) {
+      if (navigator.share) {
+        navigator.share({
+          title: `Replasto Bale Passport: ${baleId}`,
+          text: `Verified Chain-of-Custody record for plastic bale ${baleId}`,
+          url: window.location.href
+        }).catch(() => {});
+      } else {
+        copyText(window.location.href);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadPassport);
+  </script>
+</body>
+</html>

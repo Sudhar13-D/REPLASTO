@@ -16,9 +16,11 @@ def main():
     print(f"      Status: {result.get('status')} | Batches: {result.get('batch_count', '~120')}")
 
     port = int(os.environ.get("PORT", 8000))
-    host = os.environ.get("HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0")
 
     print(f"[2/2] Starting Replasto server at http://{host}:{port}")
+    print(f"      Local access: http://127.0.0.1:{port}")
+    print(f"      Mobile Wi-Fi: http://10.174.72.161:{port}")
     print("      Vendor libraries: Chart.js (offline local vendor)")
     print("      Press Ctrl+C to terminate.")
     print("==============================================================")

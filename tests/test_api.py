@@ -56,6 +56,44 @@ def test_api_batch_qr(client):
     assert res.status_code == 200
     assert res.headers["content-type"] == "image/png"
 
+def test_api_bale_lookup_and_samples(client):
+    # Test sample bales
+    samples_res = client.get("/api/batches/samples")
+    assert samples_res.status_code == 200
+    samples = samples_res.json()["samples"]
+    assert len(samples) > 0
+    target_bale_id = samples[0]["bale_id"]
+
+    # Test direct lookup by bale_id
+    lookup_res = client.get(f"/api/batches/lookup?query={target_bale_id}")
+    assert lookup_res.status_code == 200
+    data = lookup_res.json()
+    assert data["bale_id"] == target_bale_id
+    assert "stream" in data
+    assert "kg_node" in data
+    assert "hash" in data
+
+    # Test lookup with full QR text payload
+    qr_payload = f"REPLASTO-CHAIN-OF-CUSTODY\nBale: {target_bale_id}\nVillage: SHED-01\nStream: PET\nScale Mass: 120.5 kg"
+    qr_lookup_res = client.get("/api/batches/lookup", params={"query": qr_payload})
+    assert qr_lookup_res.status_code == 200
+    assert qr_lookup_res.json()["bale_id"] == target_bale_id
+
+    # Test lookup by bale path
+    by_bale_res = client.get(f"/api/batches/by-bale/{target_bale_id}")
+    assert by_bale_res.status_code == 200
+    assert by_bale_res.json()["bale_id"] == target_bale_id
+
+    # Test not found
+    nf_res = client.get("/api/batches/lookup?query=NON-EXISTENT-BALE-999")
+    assert nf_res.status_code == 404
+
+def test_serve_bale_passport(client):
+    res = client.get("/bale/BAL-26-1001")
+    assert res.status_code == 200
+    assert "Bale Verification & Passport" in res.text
+    assert "Replasto" in res.text
+
 def test_api_create_batch_and_chain_extension(client):
     payload = {
         "village_id": "SHED-01",

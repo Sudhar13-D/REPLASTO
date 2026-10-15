@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Response, Request
 from typing import Optional, List
 from datetime import datetime
 import io
@@ -119,39 +119,7 @@ def list_batches(
         "batches": rows
     }
 
-@router.get("/{batch_id}")
-def get_batch_detail(batch_id: int):
-    tolerance_pct = get_setting_value("tolerance_pct", 3.0)
-    with get_db_cursor() as cur:
-        cur.execute("""
-            SELECT 
-                b.id, b.bale_id, b.village_id, b.stream, b.kg_node, b.created_at,
-                b.operator_id, b.photo_path, b.prev_hash, b.hash, b.status, b.version,
-                b.is_injected, b.parent_id, b.edit_reason,
-                d.buyer_id, d.vehicle_id, d.kg_buyer, d.slip_ref, d.delivered_at,
-                d.transport_cost, d.sale_value,
-                s.name as shed_name,
-                byr.name as buyer_name, byr.type as buyer_type
-            FROM batches b
-            LEFT JOIN deliveries d ON b.id = d.batch_id
-            LEFT JOIN sheds s ON b.village_id = s.id
-            LEFT JOIN buyers byr ON d.buyer_id = byr.id
-            WHERE b.id = ?
-        """, (batch_id,))
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail=f"Batch ID {batch_id} not found")
-        data = dict(row)
-
-        # Version history for this bale_id
-        cur.execute("""
-            SELECT id, version, kg_node, stream, created_at, operator_id, edit_reason, hash
-            FROM batches
-            WHERE bale_id = ?
-            ORDER BY version ASC
-        """, (data["bale_id"],))
-        version_history = [dict(v) for v in cur.fetchall()]
-
+def _format_batch_detail(data: dict, version_history: list, tolerance_pct: float) -> dict:
     kg_node = float(data["kg_node"])
     kg_buyer = data["kg_buyer"]
     if kg_buyer is not None:
@@ -176,31 +144,159 @@ def get_batch_detail(batch_id: int):
     data["version_history"] = version_history
     return data
 
+@router.get("/samples")
+def get_sample_bales():
+    """Returns sample representative bales for 1-click scanner testing and demonstration."""
+    with get_db_cursor() as cur:
+        # Fetch a diverse mix: 1 verified, 1 flagged, 1 recorded unverified, 1 recorded genesis
+        cur.execute("""
+            SELECT b.id, b.bale_id, b.stream, b.kg_node, b.status, b.created_at, b.hash,
+                   s.name as shed_name
+            FROM batches b
+            LEFT JOIN sheds s ON b.village_id = s.id
+            GROUP BY b.bale_id
+            ORDER BY b.id ASC
+            LIMIT 8
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+        return {"samples": rows}
+
+@router.get("/lookup")
+def lookup_batch(query: str = Query(..., description="Bale ID, QR code payload text, URL, or hash")):
+    """
+    Looks up a bale batch record by scanned QR payload, Bale ID (e.g. BAL-26-1001),
+    numeric ID, slip reference, or SHA-256 hash.
+    """
+    import re
+    raw = query.strip()
+    
+    # 1. Extract bale ID if present in text
+    cleaned = raw
+    bale_match = re.search(r"Bale:\s*([A-Za-z0-9\-_]+)", raw, re.IGNORECASE)
+    if bale_match:
+        cleaned = bale_match.group(1).strip()
+    else:
+        url_bale = re.search(r"[?&]bale=([A-Za-z0-9\-_]+)", raw, re.IGNORECASE)
+        if url_bale:
+            cleaned = url_bale.group(1).strip()
+        else:
+            direct_bale = re.search(r"(BAL-\d+-\d+)", raw, re.IGNORECASE)
+            if direct_bale:
+                cleaned = direct_bale.group(1).strip()
+
+    base_query = """
+        SELECT 
+            b.id, b.bale_id, b.village_id, b.stream, b.kg_node, b.created_at,
+            b.operator_id, b.photo_path, b.prev_hash, b.hash, b.status, b.version,
+            b.is_injected, b.parent_id, b.edit_reason,
+            d.buyer_id, d.vehicle_id, d.kg_buyer, d.slip_ref, d.delivered_at,
+            d.transport_cost, d.sale_value,
+            s.name as shed_name,
+            byr.name as buyer_name, byr.type as buyer_type
+        FROM batches b
+        LEFT JOIN deliveries d ON b.id = d.batch_id
+        LEFT JOIN sheds s ON b.village_id = s.id
+        LEFT JOIN buyers byr ON d.buyer_id = byr.id
+    """
+    
+    with get_db_cursor() as cur:
+        row = None
+        # 1. Exact bale_id match
+        cur.execute(base_query + " WHERE UPPER(b.bale_id) = UPPER(?) ORDER BY b.version DESC, b.id DESC LIMIT 1", (cleaned,))
+        row = cur.fetchone()
+
+        # 2. Check if numeric id
+        if not row and cleaned.isdigit():
+            cur.execute(base_query + " WHERE b.id = ? ORDER BY b.version DESC, b.id DESC LIMIT 1", (int(cleaned),))
+            row = cur.fetchone()
+
+        # 3. Check hash or slip ref
+        if not row and len(cleaned) >= 6:
+            cur.execute(base_query + " WHERE b.hash LIKE ? OR d.slip_ref LIKE ? ORDER BY b.version DESC, b.id DESC LIMIT 1", (f"{cleaned}%", f"%{cleaned}%"))
+            row = cur.fetchone()
+
+        # 4. Partial bale_id match
+        if not row:
+            cur.execute(base_query + " WHERE b.bale_id LIKE ? ORDER BY b.version DESC, b.id DESC LIMIT 1", (f"%{cleaned}%",))
+            row = cur.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail=f"No plastic bale matching '{cleaned}' was found.")
+
+        data = dict(row)
+        cur.execute("""
+            SELECT id, version, kg_node, stream, created_at, operator_id, edit_reason, hash
+            FROM batches
+            WHERE bale_id = ?
+            ORDER BY version ASC
+        """, (data["bale_id"],))
+        version_history = [dict(v) for v in cur.fetchall()]
+
+    tolerance_pct = get_setting_value("tolerance_pct", 3.0)
+    return _format_batch_detail(data, version_history, tolerance_pct)
+
+@router.get("/by-bale/{bale_id}")
+def get_batch_by_bale(bale_id: str):
+    return lookup_batch(query=bale_id)
+
+@router.get("/{batch_id}")
+def get_batch_detail(batch_id: int):
+    tolerance_pct = get_setting_value("tolerance_pct", 3.0)
+    with get_db_cursor() as cur:
+        cur.execute("""
+            SELECT 
+                b.id, b.bale_id, b.village_id, b.stream, b.kg_node, b.created_at,
+                b.operator_id, b.photo_path, b.prev_hash, b.hash, b.status, b.version,
+                b.is_injected, b.parent_id, b.edit_reason,
+                d.buyer_id, d.vehicle_id, d.kg_buyer, d.slip_ref, d.delivered_at,
+                d.transport_cost, d.sale_value,
+                s.name as shed_name,
+                byr.name as buyer_name, byr.type as buyer_type
+            FROM batches b
+            LEFT JOIN deliveries d ON b.id = d.batch_id
+            LEFT JOIN sheds s ON b.village_id = s.id
+            LEFT JOIN buyers byr ON d.buyer_id = byr.id
+            WHERE b.id = ?
+        """, (batch_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Batch ID {batch_id} not found")
+        data = dict(row)
+
+        cur.execute("""
+            SELECT id, version, kg_node, stream, created_at, operator_id, edit_reason, hash
+            FROM batches
+            WHERE bale_id = ?
+            ORDER BY version ASC
+        """, (data["bale_id"],))
+        version_history = [dict(v) for v in cur.fetchall()]
+
+    return _format_batch_detail(data, version_history, tolerance_pct)
+
 @router.get("/{batch_id}/qr")
-def get_batch_qr(batch_id: int):
+def get_batch_qr(batch_id: int, request: Request):
     with get_db_cursor() as cur:
         cur.execute("SELECT bale_id, village_id, stream, kg_node, created_at, hash FROM batches WHERE id = ?", (batch_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Batch not found")
 
-    payload = (
-        f"REPLASTO-CHAIN-OF-CUSTODY\n"
-        f"Bale: {row['bale_id']}\n"
-        f"Village: {row['village_id']}\n"
-        f"Stream: {row['stream']}\n"
-        f"Scale Mass: {row['kg_node']} kg\n"
-        f"Recorded: {row['created_at']}\n"
-        f"SHA256: {row['hash']}"
-    )
+    import os
+    base_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("PUBLIC_BASE_URL")
+    if not base_url:
+        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+        host = request.headers.get("x-forwarded-host") or request.headers.get("host") or "127.0.0.1:8000"
+        base_url = f"{scheme}://{host}"
+    base_url = base_url.rstrip("/")
+    bale_url = f"{base_url}/bale/{row['bale_id']}"
 
     qr = qrcode.QRCode(
-        version=1,
+        version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
         box_size=6,
         border=2,
     )
-    qr.add_data(payload)
+    qr.add_data(bale_url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="#14281D", back_color="#FFFFFF")
 

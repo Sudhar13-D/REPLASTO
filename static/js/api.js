@@ -102,6 +102,14 @@ export const API = {
     return this.request(`/api/batches/${batchId}`);
   },
 
+  async lookupBatch(query) {
+    return this.request(`/api/batches/lookup?query=${encodeURIComponent(query)}`);
+  },
+
+  async getSampleBales() {
+    return this.request("/api/batches/samples");
+  },
+
   async createBatch(batchData) {
     if (this.isOfflineSimulated()) {
       const queued = this.addToOfflineQueue(batchData);

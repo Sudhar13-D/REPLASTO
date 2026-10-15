@@ -62,6 +62,13 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 def serve_index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
+@app.get("/bale/{bale_id}")
+@app.get("/verify/{bale_id}")
+@app.get("/passport/{bale_id}")
+def serve_bale_passport(bale_id: str):
+    """Serves the standalone, public mobile-friendly digital product passport."""
+    return FileResponse(str(STATIC_DIR / "bale.html"))
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "app": "Replasto", "version": "1.0.0"}

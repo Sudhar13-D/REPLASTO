@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from pathlib import Path
 import os
 
@@ -19,13 +20,21 @@ from app.routers import (
     overview
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize DB and Seed data on startup
+    init_db()
+    seed_database(force=False)
+    yield
+
 app = FastAPI(
     title="Replasto",
     description="Offline-first Chain-of-Custody System for Rural Plastic Waste",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
-# Enable CORS for local testing
+# Enable CORS for cloud and client testing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,12 +42,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize DB and Seed data on startup
-@app.on_event("startup")
-def on_startup():
-    init_db()
-    seed_database(force=False)
 
 # Register Routers
 app.include_router(overview.router)

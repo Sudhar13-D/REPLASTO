@@ -18,11 +18,19 @@ def test_health(client):
     assert res.status_code == 200
     assert res.json()["status"] == "ok"
 
+    # Test HEAD request (common for monitors and health-checkers)
+    head_res = client.head("/health")
+    assert head_res.status_code == 200
+
 def test_serve_index(client):
     res = client.get("/")
     assert res.status_code == 200
     assert "Replasto" in res.text
     assert "DEMO DATA: synthetic, not field data" in res.text
+
+    # Test HEAD request on root path (fixes 405 Method Not Allowed in uptime monitors)
+    head_res = client.head("/")
+    assert head_res.status_code == 200
 
 def test_api_overview(client):
     res = client.get("/api/overview")

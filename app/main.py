@@ -58,20 +58,25 @@ app.include_router(sheds_buyers.router)
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def serve_index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
-@app.get("/bale/{bale_id}")
-@app.get("/verify/{bale_id}")
-@app.get("/passport/{bale_id}")
+@app.api_route("/bale/{bale_id}", methods=["GET", "HEAD"])
+@app.api_route("/verify/{bale_id}", methods=["GET", "HEAD"])
+@app.api_route("/passport/{bale_id}", methods=["GET", "HEAD"])
 def serve_bale_passport(bale_id: str):
     """Serves the standalone, public mobile-friendly digital product passport."""
     return FileResponse(str(STATIC_DIR / "bale.html"))
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok", "app": "Replasto", "version": "1.0.0"}
+
+# Automatically ensure HEAD method is supported across all GET routes (uptime monitors/health checkers)
+for route in app.routes:
+    if hasattr(route, "methods") and "GET" in route.methods:
+        route.methods.add("HEAD")
 
 # Global Exception Handler for predictable JSON responses
 @app.exception_handler(Exception)
